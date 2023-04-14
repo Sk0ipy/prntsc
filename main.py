@@ -29,7 +29,7 @@ def randomstring(stringLength=string_length):
 # this function will check if the url is already in the database and return True if it is
 # if its true it will create a new url and check it again
 def check_url_double(url, cursor):
-    cursor.execute("SELECT url FROM working_urls WHERE url=%s", (url,))
+    cursor.execute("SELECT url FROM urls WHERE url=%s", (url,))
     return cursor.fetchone() is not None
 
 
@@ -52,51 +52,66 @@ def check_url(url):
 
 
 def main():
-    # keep track of how long the program is running
-    start_time = time.time()
+    try:
+        # keep track of how long the program is running
+        start_time = time.time()
 
-    counter = 0  # initialize the counter variable
-    working_urls = 0  # initialize the working_urls variable
-    urls_array = []
-    minute_timer = time.time()
-
-    with connection_pool.get_connection() as connection, connection.cursor() as cursor:
-        # create a table called urls
-        cursor.execute("CREATE TABLE IF NOT EXISTS urls (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
-
-        # create a table called working_urls
-        cursor.execute("CREATE TABLE IF NOT EXISTS working_urls (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
-
-    while True:
+        counter = 0  # initialize the counter variable
+        working_urls = 0  # initialize the working_urls variable
+        urls_array = []
+        minute_timer = time.time()
 
         with connection_pool.get_connection() as connection, connection.cursor() as cursor:
-            url = generate_url()
-            # checks if the url is already in the database if not add it to the database
-            if not check_url_double(url, cursor):
-                # print the time it is running for in seconds
-                counter += 1
-                # save url to a array
-                urls_array.append(url)
-                if len(urls_array) == 50:
-                    url_tuple = [(url,) for url in urls_array]
-                    cursor.executemany("INSERT INTO urls (url) VALUES (%s)", url_tuple)
-                    connection.commit()
-                    urls_array = []
+            # create a table called urls
+            cursor.execute("CREATE TABLE IF NOT EXISTS urls (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
 
-                if check_url(url):
-                    # save the working url to the database
-                    cursor.execute("INSERT INTO working_urls (url) VALUES (%s)", (url,))
-                    connection.commit()
-                    working_urls += 1
+            # create a table called working_urls
+            cursor.execute("CREATE TABLE IF NOT EXISTS working_urls (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
 
-#                 every 60 seconds print the number of urls checked and the number of working urls
-                if time.time() - minute_timer > 15:
-                    print(f"{counter} urls checked, {working_urls} working urls")
-                    print(f"Running for {time.time() - start_time} seconds")
-#                   average time per url
-                    print(f"Average time per url: {(time.time() - start_time) / counter}")
-                    minute_timer = time.time()
-                    print("--------------------------------------------------")
+            # create a table called SFW
+            cursor.execute("CREATE TABLE IF NOT EXISTS sfw (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
+            # create a table called NSFW
+            cursor.execute("CREATE TABLE IF NOT EXISTS nsfw (id INT AUTO_INCREMENT PRIMARY KEY, url VARCHAR(255))")
+
+        while True:
+
+            with connection_pool.get_connection() as connection, connection.cursor() as cursor:
+                url = generate_url()
+                # checks if the url is already in the database if not add it to the database
+                if not check_url_double(url, cursor):
+                    # print the time it is running for in seconds
+                    counter += 1
+                    # save url to a array
+                    urls_array.append(url)
+                    if len(urls_array) == 50:
+                        url_tuple = [(url,) for url in urls_array]
+                        cursor.executemany("INSERT INTO urls (url) VALUES (%s)", url_tuple)
+                        connection.commit()
+                        urls_array = []
+
+                    if check_url(url):
+                        # save the working url to the database
+                        cursor.execute("INSERT INTO working_urls (url) VALUES (%s)", (url,))
+                        connection.commit()
+                        working_urls += 1
+
+                    #                 every 60 seconds print the number of urls checked and the number of working urls
+                    if time.time() - minute_timer > 15:
+                        print(f"{counter} urls checked, {working_urls} working urls")
+                        print(f"Running for {time.time() - start_time} seconds")
+                        #                   average time per url
+                        print(f"Average time per url: {(time.time() - start_time) / counter}")
+                        minute_timer = time.time()
+                        print("--------------------------------------------------")
+
+    except KeyboardInterrupt:
+        print("Program stopped")
+        print(f"{counter} urls checked, {working_urls} working urls")
+        print(f"Running for {time.time() - start_time} seconds")
+        print(f"Average time per url: {(time.time() - start_time) / counter}")
+
+    except Exception as e:
+        print(e)
 
 
 if __name__ == '__main__':
