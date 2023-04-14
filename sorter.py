@@ -28,6 +28,9 @@ def download_image(url):
 
 
 def main():
+    # if the images folder doesnt exist then create it
+    if not os.path.exists("images"):
+        os.makedirs("images")
     start_time = time.time()
     urls_array = []
     nsfw_counter = 0
@@ -104,6 +107,8 @@ def main():
                 os.remove("images/" + file)
         except Exception as e:
             exit()
+
+
 
 
 if __name__ == "__main__":
