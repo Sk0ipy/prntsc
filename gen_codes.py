@@ -1,6 +1,8 @@
 import psycopg2
 from psycopg2 import pool
 
+  
+
 # create a connection to the database
 connection_pool = psycopg2.pool.SimpleConnectionPool(
     1, 20,
