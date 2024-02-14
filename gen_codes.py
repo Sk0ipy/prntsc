@@ -1,11 +1,13 @@
-import mysql.connector
-import mysql.connector.pooling
+import psycopg2
+from psycopg2 import pool
 
 # create a connection to the database
-connection_pool = mysql.connector.pooling.MySQLConnectionPool(
+connection_pool = psycopg2.pool.SimpleConnectionPool(
+    1, 20,
     host="localhost",
-    user="root",
-    database="prntsc_db"
+    user="postgres",
+    password="1234",
+    database="codes"
 )
 
 
@@ -32,12 +34,14 @@ def chunk_generator(iterable, chunk_size):
 
 def main():
     gen = gen_code()
-    chunk_size = 3000  # Adjust the chunk size as per your needs
-    with connection_pool.get_connection() as connection, connection.cursor() as cursor:
-        for chunk in chunk_generator(gen, chunk_size):
-            codes = [(code,) for code in chunk]
-            cursor.executemany("INSERT INTO codes (code) VALUES (%s)", codes)
-            connection.commit()
+    chunk_size = 30000  # Adjust the chunk size as per your needs
+    with connection_pool.getconn() as connection:
+        with connection.cursor() as cursor:
+            for chunk in chunk_generator(gen, chunk_size):
+                codes = [(code,) for code in chunk]
+                cursor.executemany("INSERT INTO code5 (code) VALUES (%s)", codes)
+                connection.commit()
+        connection_pool.putconn(connection)
 
 
 if __name__ == '__main__':
